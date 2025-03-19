@@ -1,0 +1,37 @@
+# version docker compose
+version: "3"
+services:
+  frontend:
+    # use Dockerfile in ./helloworld-webapp
+    build: ./helloworld-webapp
+    # Map port máy host 3000 → port container 3000
+    ports:
+      - "3000:3000"
+    # đảm bảo container backend khởi động trước.
+    depends_on:
+      - backend
+    # code update liên tục khi thay đổi
+    volumes:
+      - ./helloworld-webapp/src:/app/src # đảm bảo mã nguồn của bạn luôn được đồng bộ.
+      # - /app/node_modules # Tránh ghi đè thư mục node_modules trong container
+    environment:
+      - CHOKIDAR_USEPOLLING=true # Giúp hot-reload hoạt động tốt hơn trên Docker
+    stdin_open: true # Giữ terminal mở
+    tty: true # Tương tự như trên
+    # Cả frontend và backend đều cùng tham gia mạng my-network để có thể liên lạc với nhau qua tên dịch vụ.
+    networks:
+      - my-network
+  backend:
+    build: ./helloworld-service
+    ports:
+      - "3001:3001"
+    # code update liên tục từ máy host
+    volumes:
+      - ./helloworld-service:/app
+      - /app/node_modules
+    networks:
+      - my-network
+# Tạo một mạng chung để các container có thể giao tiếp
+networks:
+  my-network:
+    driver: bridge
